@@ -12,7 +12,9 @@ events {
     worker_connections  1024;
 }
 
-include /opt/verynginx/verynginx/nginx_conf/in_external.conf;
+set $nginx_path '';
+
+include $nginx_path/conf/very/in_external.conf;
 
 http {
     include       mime.types;
