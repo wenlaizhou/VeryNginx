@@ -27,12 +27,12 @@ local unpack = unpack
 local setmetatable = setmetatable
 local type = type
 
-
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
-    new_tab = function (narr, nrec) return {} end
+    new_tab = function(narr, nrec)
+        return {}
+    end
 end
-
 
 local DOT_CHAR = byte(".")
 local ZERO_CHAR = byte("0")
@@ -40,45 +40,41 @@ local COLON_CHAR = byte(":")
 
 local IP6_ARPA = "ip6.arpa"
 
-local TYPE_A      = 1
-local TYPE_NS     = 2
-local TYPE_CNAME  = 5
-local TYPE_PTR    = 12
-local TYPE_MX     = 15
-local TYPE_TXT    = 16
-local TYPE_AAAA   = 28
-local TYPE_SRV    = 33
-local TYPE_SPF    = 99
+local TYPE_A = 1
+local TYPE_NS = 2
+local TYPE_CNAME = 5
+local TYPE_PTR = 12
+local TYPE_MX = 15
+local TYPE_TXT = 16
+local TYPE_AAAA = 28
+local TYPE_SRV = 33
+local TYPE_SPF = 99
 
-local CLASS_IN    = 1
-
+local CLASS_IN = 1
 
 local _M = {
-    _VERSION    = '0.14',
-    TYPE_A      = TYPE_A,
-    TYPE_NS     = TYPE_NS,
-    TYPE_CNAME  = TYPE_CNAME,
-    TYPE_PTR    = TYPE_PTR,
-    TYPE_MX     = TYPE_MX,
-    TYPE_TXT    = TYPE_TXT,
-    TYPE_AAAA   = TYPE_AAAA,
-    TYPE_SRV    = TYPE_SRV,
-    TYPE_SPF    = TYPE_SPF,
-    CLASS_IN    = CLASS_IN,
+    _VERSION = '0.14',
+    TYPE_A = TYPE_A,
+    TYPE_NS = TYPE_NS,
+    TYPE_CNAME = TYPE_CNAME,
+    TYPE_PTR = TYPE_PTR,
+    TYPE_MX = TYPE_MX,
+    TYPE_TXT = TYPE_TXT,
+    TYPE_AAAA = TYPE_AAAA,
+    TYPE_SRV = TYPE_SRV,
+    TYPE_SPF = TYPE_SPF,
+    CLASS_IN = CLASS_IN,
 }
-
 
 local resolver_errstrs = {
-    "format error",     -- 1
-    "server failure",   -- 2
-    "name error",       -- 3
-    "not implemented",  -- 4
-    "refused",          -- 5
+    "format error", -- 1
+    "server failure", -- 2
+    "name error", -- 3
+    "not implemented", -- 4
+    "refused", -- 5
 }
 
-
 local mt = { __index = _M }
-
 
 local arpa_tmpl = new_tab(72, 0)
 
@@ -89,7 +85,6 @@ end
 for i = 2, 64, 2 do
     arpa_tmpl[i] = DOT_CHAR
 end
-
 
 function _M.new(class, opts)
     if not opts then
@@ -122,7 +117,7 @@ function _M.new(class, opts)
         else
             host = server
             port = 53
-            servers[i] = {host, port}
+            servers[i] = { host, port }
         end
 
         local ok, err = sock:setpeername(host, port)
@@ -143,14 +138,13 @@ function _M.new(class, opts)
     tcp_sock:settimeout(timeout)
 
     return setmetatable(
-                { cur = rand(1, n), socks = socks,
-                  tcp_sock = tcp_sock,
-                  servers = servers,
-                  retrans = opts.retrans or 5,
-                  no_recurse = opts.no_recurse,
-                }, mt)
+            { cur = rand(1, n), socks = socks,
+              tcp_sock = tcp_sock,
+              servers = servers,
+              retrans = opts.retrans or 5,
+              no_recurse = opts.no_recurse,
+            }, mt)
 end
-
 
 local function pick_sock(self, socks)
     local cur = self.cur
@@ -164,7 +158,6 @@ local function pick_sock(self, socks)
     return socks[cur]
 end
 
-
 local function _get_cur_server(self)
     local cur = self.cur
 
@@ -176,7 +169,6 @@ local function _get_cur_server(self)
 
     return servers[cur - 1]
 end
-
 
 function _M.set_timeout(self, timeout)
     local socks = self.socks
@@ -197,11 +189,9 @@ function _M.set_timeout(self, timeout)
     tcp_sock:settimeout(timeout)
 end
 
-
 local function _encode_name(s)
     return char(#s) .. s
 end
-
 
 local function _decode_name(buf, pos)
     local labels = {}
@@ -258,7 +248,6 @@ local function _decode_name(buf, pos)
     return concat(labels, "."), pos
 end
 
-
 local function _build_request(qname, id, no_recurse, opts)
     local qtype
 
@@ -299,7 +288,6 @@ local function _build_request(qname, id, no_recurse, opts)
         name, typ, class
     }
 end
-
 
 local function parse_response(buf, id)
     local n = #buf
@@ -435,7 +423,7 @@ local function parse_response(buf, id)
         -- print("ttl bytes: ", concat(ttl_bytes, " "))
 
         local ttl = lshift(ttl_bytes[1], 24) + lshift(ttl_bytes[2], 16)
-                    + lshift(ttl_bytes[3], 8) + ttl_bytes[4]
+                + lshift(ttl_bytes[3], 8) + ttl_bytes[4]
 
         -- print("ttl: ", ttl)
 
@@ -472,7 +460,7 @@ local function parse_response(buf, id)
 
             if p - pos ~= len then
                 return nil, format("bad cname record length: %d ~= %d",
-                                   p - pos, len)
+                        p - pos, len)
             end
 
             pos = p
@@ -528,7 +516,7 @@ local function parse_response(buf, id)
 
             if p - pos ~= len then
                 return nil, format("bad cname record length: %d ~= %d",
-                                   p - pos, len)
+                        p - pos, len)
             end
 
             ans.exchange = host
@@ -559,7 +547,7 @@ local function parse_response(buf, id)
 
             if p - pos ~= len then
                 return nil, format("bad srv record length: %d ~= %d",
-                                   p - pos, len)
+                        p - pos, len)
             end
 
             ans.target = name
@@ -575,7 +563,7 @@ local function parse_response(buf, id)
 
             if p - pos ~= len then
                 return nil, format("bad cname record length: %d ~= %d",
-                                   p - pos, len)
+                        p - pos, len)
             end
 
             pos = p
@@ -606,7 +594,7 @@ local function parse_response(buf, id)
                 -- merge the following loop on this code path
                 -- with the processing logic above.
 
-                val = {val}
+                val = { val }
                 local idx = 2
                 repeat
                     local slen = byte(buf, pos)
@@ -633,7 +621,7 @@ local function parse_response(buf, id)
 
             if p - pos ~= len then
                 return nil, format("bad cname record length: %d ~= %d",
-                                   p - pos, len)
+                        p - pos, len)
             end
 
             pos = p
@@ -653,7 +641,6 @@ local function parse_response(buf, id)
     return answers
 end
 
-
 local function _gen_id(self)
     local id = self._id   -- for regression testing
     if id then
@@ -661,7 +648,6 @@ local function _gen_id(self)
     end
     return rand(0, 65535)   -- two bytes
 end
-
 
 local function _tcp_query(self, query, id)
     local sock = self.tcp_sock
@@ -676,7 +662,7 @@ local function _tcp_query(self, query, id)
     local ok, err = sock:connect(server[1], server[2])
     if not ok then
         return nil, "failed to connect to TCP server "
-            .. concat(server, ":") .. ": " .. err
+                .. concat(server, ":") .. ": " .. err
     end
 
     query = concat(query, "")
@@ -685,16 +671,16 @@ local function _tcp_query(self, query, id)
     local len_hi = char(rshift(len, 8))
     local len_lo = char(band(len, 0xff))
 
-    local bytes, err = sock:send({len_hi, len_lo, query})
+    local bytes, err = sock:send({ len_hi, len_lo, query })
     if not bytes then
         return nil, "failed to send query to TCP server "
-            .. concat(server, ":") .. ": " .. err
+                .. concat(server, ":") .. ": " .. err
     end
 
     local buf, err = sock:receive(2)
     if not buf then
         return nil, "failed to receive the reply length field from TCP server "
-            .. concat(server, ":") .. ": " .. err
+                .. concat(server, ":") .. ": " .. err
     end
 
     local len_hi = byte(buf, 1)
@@ -706,20 +692,19 @@ local function _tcp_query(self, query, id)
     buf, err = sock:receive(len)
     if not buf then
         return nil, "failed to receive the reply message body from TCP server "
-            .. concat(server, ":") .. ": " .. err
+                .. concat(server, ":") .. ": " .. err
     end
 
     local answers, err = parse_response(buf, id)
     if not answers then
         return nil, "failed to parse the reply from the TCP server "
-            .. concat(server, ":") .. ": " .. err
+                .. concat(server, ":") .. ": " .. err
     end
 
     sock:close()
 
     return answers
 end
-
 
 function _M.tcp_query(self, qname, opts)
     local socks = self.socks
@@ -738,7 +723,6 @@ function _M.tcp_query(self, qname, opts)
 
     return _tcp_query(self, query, id)
 end
-
 
 function _M.query(self, qname, opts)
     local socks = self.socks
@@ -767,7 +751,7 @@ function _M.query(self, qname, opts)
         if not ok then
             local server = _get_cur_server(self)
             return nil, "failed to send request to UDP server "
-                .. concat(server, ":") .. ": " .. err
+                    .. concat(server, ":") .. ": " .. err
         end
 
         local buf, err
@@ -801,13 +785,12 @@ function _M.query(self, qname, opts)
         if err ~= "timeout" or i == retrans then
             local server = _get_cur_server(self)
             return nil, "failed to receive reply from UDP server "
-                .. concat(server, ":") .. ": " .. err
+                    .. concat(server, ":") .. ": " .. err
         end
     end
 
     -- impossible to reach here
 end
-
 
 function _M.compress_ipv6_addr(addr)
     local addr = re_sub(addr, "^(0:)+|(:0)+$|:(0:)+", "::", "jo")
@@ -817,7 +800,6 @@ function _M.compress_ipv6_addr(addr)
 
     return addr
 end
-
 
 local function _expand_ipv6_addr(addr)
     if find(addr, "::", 1, true) then
@@ -843,9 +825,7 @@ local function _expand_ipv6_addr(addr)
     return addr
 end
 
-
 _M.expand_ipv6_addr = _expand_ipv6_addr
-
 
 function _M.arpa_str(addr)
     if find(addr, ":", 1, true) then
@@ -870,20 +850,17 @@ function _M.arpa_str(addr)
         addr = char(unpack(arpa_tmpl))
     else
         addr = re_sub(addr, [[(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})]],
-                      "$4.$3.$2.$1.in-addr.arpa", "ajo")
+                "$4.$3.$2.$1.in-addr.arpa", "ajo")
     end
 
     return addr
 end
 
-
 function _M.reverse_query(self, addr)
     return self.query(self, self.arpa_str(addr),
-                      {qtype = self.TYPE_PTR})
+            { qtype = self.TYPE_PTR })
 end
 
-
 randomseed(ngx_time())
-
 
 return _M

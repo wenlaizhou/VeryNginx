@@ -6,7 +6,6 @@
 
 local _M = {}
 
-
 local VeryNginxConfig = require "VeryNginxConfig"
 local request_tester = require "request_tester"
 local util = require "util"
@@ -23,18 +22,18 @@ function _M.filter()
     local response_list = VeryNginxConfig.configs['response']
     local response = nil
 
-    for i, rule in ipairs( VeryNginxConfig.configs["frequency_limit_rule"] ) do
+    for i, rule in ipairs(VeryNginxConfig.configs["frequency_limit_rule"]) do
         local enable = rule['enable']
-        local matcher = matcher_list[ rule['matcher'] ] 
-        if enable == true and request_tester.test( matcher ) == true then
-            
-            local key = i 
-            if util.existed( rule['separate'], 'ip' ) then
-                key = key..'-'..ngx.var.remote_addr
+        local matcher = matcher_list[rule['matcher']]
+        if enable == true and request_tester.test(matcher) == true then
+
+            local key = i
+            if util.existed(rule['separate'], 'ip') then
+                key = key .. '-' .. ngx.var.remote_addr
             end
 
-            if util.existed( rule['separate'], 'uri' ) then
-                key = key..'-'..ngx.var.uri
+            if util.existed(rule['separate'], 'uri') then
+                key = key .. '-' .. ngx.var.uri
             end
 
             local time = rule['time']
@@ -43,31 +42,31 @@ function _M.filter()
 
             --ngx.log(ngx.STDERR,'-----');
             --ngx.log(ngx.STDERR,key);
-            
-            local count_now = limit_dict:get( key )
+
+            local count_now = limit_dict:get(key)
             --ngx.log(ngx.STDERR, tonumber(count_now) );
-            
+
             if count_now == nil then
-                limit_dict:set( key, 1, tonumber(time) )
+                limit_dict:set(key, 1, tonumber(time))
                 count_now = 0
             end
-            
-            limit_dict:incr( key, 1 )
+
+            limit_dict:incr(key, 1)
 
             if count_now > tonumber(count) then
                 if rule['response'] ~= nil then
-                    ngx.status = tonumber( rule['code'] )
+                    ngx.status = tonumber(rule['code'])
                     response = response_list[rule['response']]
                     if response ~= nil then
                         ngx.header.content_type = response['content_type']
-                        ngx.say( response['body'] )
+                        ngx.say(response['body'])
                     end
-                    ngx.exit( ngx.HTTP_OK )
+                    ngx.exit(ngx.HTTP_OK)
                 else
-                    ngx.exit( tonumber( rule['code'] ) )
+                    ngx.exit(tonumber(rule['code']))
                 end
             end
-            
+
             return
         end
     end

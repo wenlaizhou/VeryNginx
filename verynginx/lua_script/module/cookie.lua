@@ -2,34 +2,39 @@
 -- See RFC6265 http://tools.ietf.org/search/rfc6265
 -- require "luacov"
 
-local type          = type
-local byte          = string.byte
-local sub           = string.sub
-local format        = string.format
-local log           = ngx.log
-local ERR           = ngx.ERR
-local ngx_header    = ngx.header
+local type = type
+local byte = string.byte
+local sub = string.sub
+local format = string.format
+local log = ngx.log
+local ERR = ngx.ERR
+local ngx_header = ngx.header
 
-local EQUAL         = byte("=")
-local SEMICOLON     = byte(";")
-local SPACE         = byte(" ")
-local HTAB          = byte("\t")
+local EQUAL = byte("=")
+local SEMICOLON = byte(";")
+local SPACE = byte(" ")
+local HTAB = byte("\t")
 
 -- table.new(narr, nrec)
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
-    new_tab = function () return {} end
+    new_tab = function()
+        return {}
+    end
 end
 
 local ok, clear_tab = pcall(require, "table.clear")
 if not ok then
-    clear_tab = function(tab) for k, _ in pairs(tab) do tab[k] = nil end end
+    clear_tab = function(tab)
+        for k, _ in pairs(tab) do
+            tab[k] = nil
+        end
+    end
 end
 
 local _M = new_tab(0, 2)
 
 _M._VERSION = '0.01'
-
 
 local function get_cookie_table(text_cookie)
     if type(text_cookie) ~= "string" then
@@ -38,20 +43,20 @@ local function get_cookie_table(text_cookie)
         return {}
     end
 
-    local EXPECT_KEY    = 1
-    local EXPECT_VALUE  = 2
-    local EXPECT_SP     = 3
+    local EXPECT_KEY = 1
+    local EXPECT_VALUE = 2
+    local EXPECT_SP = 3
 
     local n = 0
     local len = #text_cookie
 
-    for i=1, len do
+    for i = 1, len do
         if byte(text_cookie, i) == SEMICOLON then
             n = n + 1
         end
     end
 
-    local cookie_table  = new_tab(0, n + 1)
+    local cookie_table = new_tab(0, n + 1)
 
     local state = EXPECT_SP
     local i = 1
@@ -79,7 +84,7 @@ local function get_cookie_table(text_cookie)
             end
         elseif state == EXPECT_SP then
             if byte(text_cookie, j) ~= SPACE
-                and byte(text_cookie, j) ~= HTAB
+                    and byte(text_cookie, j) ~= HTAB
             then
                 state = EXPECT_KEY
                 i = j
@@ -99,10 +104,10 @@ end
 function _M.new(self)
     local _cookie = ngx.var.http_cookie
     --if not _cookie then
-        --return nil, "no cookie found in current request"
+    --return nil, "no cookie found in current request"
     --end
     return setmetatable({ _cookie = _cookie, set_cookie_table = new_tab(4, 0) },
-        { __index = self })
+            { __index = self })
 end
 
 function _M.get(self, key)
@@ -137,13 +142,13 @@ local function bake(cookie)
         cookie.max_age = cookie["max-age"]
     end
     local str = cookie.key .. "=" .. cookie.value
-        .. (cookie.expires and "; Expires=" .. cookie.expires or "")
-        .. (cookie.max_age and "; Max-Age=" .. cookie.max_age or "")
-        .. (cookie.domain and "; Domain=" .. cookie.domain or "")
-        .. (cookie.path and "; Path=" .. cookie.path or "")
-        .. (cookie.secure and "; Secure" or "")
-        .. (cookie.httponly and "; HttpOnly" or "")
-        .. (cookie.extension and "; " .. cookie.extension or "")
+            .. (cookie.expires and "; Expires=" .. cookie.expires or "")
+            .. (cookie.max_age and "; Max-Age=" .. cookie.max_age or "")
+            .. (cookie.domain and "; Domain=" .. cookie.domain or "")
+            .. (cookie.path and "; Path=" .. cookie.path or "")
+            .. (cookie.secure and "; Secure" or "")
+            .. (cookie.httponly and "; HttpOnly" or "")
+            .. (cookie.extension and "; " .. cookie.extension or "")
     return str
 end
 
@@ -171,7 +176,7 @@ function _M.set(self, cookie)
 
         -- we can not set cookie like ngx.header['Set-Cookie'][3] = val
         -- so create a new table, copy all the values, and then set it back
-        for i=1, size do
+        for i = 1, size do
             t[i] = ngx_header['Set-Cookie'][i]
             if t[i] == cookie_str then
                 -- new cookie is duplicated
