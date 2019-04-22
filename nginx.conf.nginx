@@ -12,7 +12,7 @@ events {
     worker_connections  1024;
 }
 
-set $nginx_path '';
+set $nginx_path '/usr/local/openresty/nginx';
 
 include $nginx_path/conf/very/in_external.conf;
 
