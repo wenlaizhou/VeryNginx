@@ -1,0 +1,157 @@
+#user  nobody;
+worker_processes 1;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    use epoll;
+    worker_connections  2048;
+}
+
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+    #                  '$status $body_bytes_sent "$http_referer" '
+    #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+    #access_log  logs/access.log  main;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+
+
+    #keepalive_timeout  0;
+    keepalive_timeout 65;
+
+    #以下为启用限速相关模块分别为，限制连接数(在location中配置，此处为基本设置)，限制请求数为每个ip 1次/s,限制每个ip的下载速度（未启用）
+    limit_conn_zone $binary_remote_addr zone=addr:10m;
+    limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;
+    #limit_traffic_rate_zone   rate $remote_addr 16m;
+
+    #gzip  on;
+
+    server {
+        listen 80;
+        server_name  localhost;
+        charset utf-8;
+        #access_log  logs/host.access.log  main;
+
+        location / {
+            root   /这里填写刚才配置ftp时新建用户xxx的文件放置目录;
+            index  index.html index.htm;
+
+            # 开启目录浏览
+            autoindex on;
+            autoindex_exact_size on;
+            autoindex_localtime on;
+            alias	F:\\PHP\\upload;
+
+            #internal;
+
+            accesskey on;
+            accesskey_hashmethod   md5;
+            accesskey_arg         "key";
+            accesskey_signature   "mypass$remote_addr";
+
+            #限制每个ip连接数，超出请求数限制的最大请求数，按ip限速（未启用，未实验与连接数限制如何配合，待研究）
+            limit_conn addr 1;
+            limit_req zone=one burst=5;
+            #limit_traffic_rate  rate 128k;
+
+            #并限制每个连接的下载达到500K后（未启用）限制速度为128K/s
+            #limit_rate_after 500k;
+            limit_rate 128k;
+            #limit_rate_after 500k;
+            limit_rate 128k;
+            sendfile_max_chunk 256k;
+            aio threads;
+            directio 1024k;
+            output_buffers 1 128k;
+
+
+            sendfile_max_chunk 1024k;
+            aio threads;
+            directio 5120k;
+
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+        #
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+
+        # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+        #
+        #location ~ \.php$ {
+        #    proxy_pass   http://127.0.0.1;
+        #}
+
+        # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+        #
+        #location ~ \.php$ {
+        #    root           html;
+        #    fastcgi_pass   127.0.0.1:9000;
+        #    fastcgi_index  index.php;
+        #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+        #    include        fastcgi_params;
+        #}
+
+        # deny access to .htaccess files, if Apache's document root
+        # concurs with nginx's one
+        #
+        #location ~ /\.ht {
+        #    deny  all;
+        #}
+    }
+
+
+    # another virtual host using mix of IP-, name-, and port-based configuration
+    #
+    #server {
+    #    listen       8000;
+    #    listen       somename:8080;
+    #    server_name  somename  alias  another.alias;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+
+
+    # HTTPS server
+    #
+    #server {
+    #    listen       443 ssl;
+    #    server_name  localhost;
+
+    #    ssl_certificate      cert.pem;
+    #    ssl_certificate_key  cert.key;
+
+    #    ssl_session_cache    shared:SSL:1m;
+    #    ssl_session_timeout  5m;
+
+    #    ssl_ciphers  HIGH:!aNULL:!MD5;
+    #    ssl_prefer_server_ciphers  on;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+
+}
